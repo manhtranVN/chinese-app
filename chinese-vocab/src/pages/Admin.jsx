@@ -1,7 +1,7 @@
 // src/pages/Admin.jsx
 import { useState, useEffect, useRef } from "react";
 import { db, auth } from "../firebase";
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, addDoc, deleteDoc, doc, updateDoc, writeBatch, onSnapshot } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import Papa from "papaparse";
 import { Trash2, Edit, Upload, Plus, LogOut, Home, BookOpen, Loader2 } from "lucide-react";
@@ -19,21 +19,20 @@ export default function Admin() {
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
-    // Fetch dữ liệu từ Firestore khi component được mount
-    const fetchVocab = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, "vocabulary"));
-            const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Sắp xếp tạm theo HSK
-            data.sort((a, b) => a.hsk - b.hsk);
-            setVocabList(data);
-        } catch (error) {
-            console.error("Lỗi khi tải dữ liệu:", error);
-        }
-    };
-
     useEffect(() => {
-        fetchVocab();
+        setLoading(true);
+        const unsubscribe = onSnapshot(collection(db, "vocabulary"), (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            data.sort((a, b) => a.hsk - b.hsk); // Sắp xếp
+            setVocabList(data);
+            setLoading(false);
+        }, (error) => {
+            console.error("Lỗi Realtime Firestore:", error);
+            setLoading(false);
+        });
+
+        // Cleanup function để ngắt kết nối khi rời trang Admin
+        return () => unsubscribe();
     }, []);
 
     // Xử lý Thêm / Sửa một từ thủ công
@@ -62,7 +61,7 @@ export default function Admin() {
 
             setFormData({ hanzi: "", pinyin: "", meaning: "", hsk: "1" });
             setEditingId(null);
-            fetchVocab(); // Load lại bảng
+             // Load lại bảng
         } catch (error) {
             alert("Có lỗi xảy ra: " + error.message);
         } finally {
@@ -124,7 +123,6 @@ export default function Admin() {
                     }
 
                     alert(`🎉 Đã import thành công ${rawData.length} từ vựng!`);
-                    fetchVocab();
                 } catch (error) {
                     console.error("Lỗi import:", error);
                     alert("Có lỗi khi lưu vào Firebase.");
