@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
     const navigate = useNavigate();
-    const { currentUser, logout } = useAuth();
+    const { currentUser, logOut } = useAuth();
     const [vocabData, setVocabData] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,6 +45,15 @@ const Home = () => {
         fetchVocab();
     }, []);
 
+    const handleLogout = async () => {
+        try {
+            await logOut();
+            navigate('/login');
+        } catch (error) {
+            console.error("Lỗi đăng xuất:", error);
+            alert("Lỗi đăng xuất: " + error.message);
+        }
+    };
     const handleStartFlashcard = (level) => {
         const levelVocab = hskGroups[level];
         navigate('/flashcard', { state: { vocabList: levelVocab, level } });
@@ -55,15 +64,6 @@ const Home = () => {
         const levelVocab = hskGroups[level];
         navigate('/quiz', { state: { vocabList: levelVocab, level } });
     };
-
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/login');
-        } catch (error) {
-            console.error("Lỗi đăng xuất:", error);
-        }
-    }
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">

@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 const AuthContext = createContext();
 
@@ -23,9 +23,14 @@ export const AuthProvider = ({ children }) => {
 
     const isAdmin = currentUser && ADMIN_EMAILS.includes(currentUser.email);
 
+    const logOut = () => {
+        return signOut(auth);
+    };
+
     const value = {
         currentUser,
         isAdmin,
+        logOut,
     };
 
     return (
